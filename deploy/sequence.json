@@ -1,0 +1,83 @@
+{
+  "sequence": {
+    "id": "expense-signoff-four-outcomes",
+    "title": "Friday run: one policy, four outcomes in order",
+    "sop_id": "SOP-FIN-01",
+    "steps": [
+      {
+        "n": 1,
+        "title": "Clean allow — $7,500 with all signatures authorizes with a derivation",
+        "request": {
+          "action_id": "SEQ-01-ALLOW",
+          "action_type": "execute-payout",
+          "actor_id": "dept-head-01",
+          "amount": 7500,
+          "currency": "USD",
+          "vendor": "Acme Supplies",
+          "signatures": {
+            "dept_head": true,
+            "ceo": false,
+            "finance": true
+          }
+        },
+        "expect": {
+          "status": "AUTHORIZED"
+        }
+      },
+      {
+        "n": 2,
+        "title": "Refusal names the exact missing premise — $3,200 with no finance signature",
+        "request": {
+          "action_id": "SEQ-02-REFUSE",
+          "action_type": "execute-payout",
+          "actor_id": "dept-head-01",
+          "amount": 3200,
+          "currency": "USD",
+          "vendor": "Initech LLC",
+          "signatures": {
+            "dept_head": true,
+            "ceo": false,
+            "finance": false
+          }
+        },
+        "expect": {
+          "status": "REFUSED",
+          "missing_premise_id": "PREMISE_FIN_05_FINANCE_SIG"
+        }
+      },
+      {
+        "n": 3,
+        "title": "Signed-but-unapproved escalation — $12,000 payout signed with no owner override",
+        "request": {
+          "action_id": "SEQ-03-ESCALATE",
+          "action_type": "execute-payout",
+          "actor_id": "dept-head-01",
+          "amount": 12000,
+          "currency": "USD",
+          "vendor": "Acme Supplies",
+          "signatures": {
+            "dept_head": true,
+            "ceo": false,
+            "finance": true
+          }
+        },
+        "expect": {
+          "status": "ESCALATED",
+          "unsatisfied_premise_id": "PREMISE_FIN_02_CEO_OVERRIDE_REQUIRED"
+        }
+      },
+      {
+        "n": 4,
+        "title": "Change attempt refused and logged — a superseded draft widens the spend limit",
+        "tamper": {
+          "field": "threshold",
+          "value": 999999
+        },
+        "expect": {
+          "status": "REFUSED",
+          "missing_premise_id": "RULESET_INTEGRITY"
+        }
+      }
+    ]
+  }
+}

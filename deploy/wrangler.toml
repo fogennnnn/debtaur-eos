@@ -1,0 +1,10 @@
+# Overwrite-deploy of the debtaur-eos browser demo onto the "testworker" slot.
+# Deploy: npx wrangler deploy --config deploy/wrangler.toml
+# No Durable Objects, no KV: static assets + two read-only JSON endpoints.
+name = "testworker"
+main = "worker.js"
+compatibility_date = "2026-09-28"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"

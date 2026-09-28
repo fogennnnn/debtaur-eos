@@ -1,0 +1,100 @@
+{
+  "sop_id": "SOP-FIN-01",
+  "title": "Who can spend, and who signs above $10,000",
+  "demo_story": "A department wants to pay a vendor: small amounts need two signatures, anything above $10,000 needs the owner's override — and the paper process stays silent on what happens when payout gets signed anyway.",
+  "version": {
+    "id": "sop_fin_01_v1.0.0",
+    "version_hash": "sha256:291190d1e4a75c8ca10b607267693d17d591a599402690520e2803598b7c74c2",
+    "effective_date": "2026-01-05",
+    "signed_by": "founder-ceo"
+  },
+  "issue_prefix": "ISS-FIN-2026",
+  "threshold": 10000,
+  "supported_currencies": ["USD"],
+  "active_vendors": [
+    "Acme Supplies",
+    "Globex Corp",
+    "Initech LLC",
+    "Northwind Traders"
+  ],
+  "premises": [
+    {
+      "id": "PREMISE_FIN_01_DEPT_HEAD_SIG",
+      "description": "Proposal requires a department-head signature plus a positive amount and a vendor name.",
+      "evaluator_key": "require-all",
+      "params": {
+        "checks": [
+          { "evaluator_key": "signature-present", "params": { "signer": "dept_head", "label": "department head" } },
+          { "evaluator_key": "positive-amount", "params": { "field": "amount" } },
+          { "evaluator_key": "text-present", "params": { "field": "vendor" } }
+        ],
+        "success_detail": "proposal complete: department-head signature present with a positive amount and a vendor name."
+      },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_FIN_04_CURRENCY_SUPPORTED",
+      "description": "Currency must be explicitly supported (USD). Uncovered currencies are refused.",
+      "evaluator_key": "currency-in-supported-set",
+      "params": { "field": "currency", "list": "supported_currencies" },
+      "escalate_on": ["finance"]
+    },
+    {
+      "id": "PREMISE_FIN_03_VENDOR_ACTIVE",
+      "description": "Vendor must verify as active against the approved vendor list.",
+      "evaluator_key": "vendor-active-against-list",
+      "params": { "field": "vendor", "list": "active_vendors" },
+      "escalate_on": ["finance"]
+    },
+    {
+      "id": "PREMISE_FIN_02_CEO_OVERRIDE_REQUIRED",
+      "description": "Amounts above 10000 require an explicit founder/CEO override signature.",
+      "evaluator_key": "amount-over-threshold-needs-override",
+      "params": {
+        "amount_field": "amount",
+        "threshold_field": "threshold",
+        "override_signer": "ceo",
+        "override_label": "founder/CEO"
+      },
+      "escalate_on": ["finance"]
+    },
+    {
+      "id": "PREMISE_FIN_05_FINANCE_SIG",
+      "description": "Payout requires a finance-officer signature over the approved state.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "finance", "label": "finance officer" },
+      "escalate_on": []
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "name": "proposal-submission",
+      "requires": ["PREMISE_FIN_01_DEPT_HEAD_SIG"]
+    },
+    {
+      "step": 2,
+      "name": "policy-compliance-check",
+      "requires": [
+        "PREMISE_FIN_04_CURRENCY_SUPPORTED",
+        "PREMISE_FIN_03_VENDOR_ACTIVE",
+        "PREMISE_FIN_02_CEO_OVERRIDE_REQUIRED"
+      ]
+    },
+    {
+      "step": 3,
+      "name": "financial-execution",
+      "requires": ["PREMISE_FIN_05_FINANCE_SIG"]
+    }
+  ],
+  "signers": [
+    { "key": "dept_head", "label": "Department head" },
+    { "key": "ceo", "label": "Founder/CEO (override)" },
+    { "key": "finance", "label": "Finance officer" }
+  ],
+  "input_fields": [
+    { "key": "amount", "label": "Expense amount ($)", "type": "amount" },
+    { "key": "currency", "label": "Currency", "type": "text", "default": "USD" },
+    { "key": "vendor", "label": "Vendor name", "type": "text" }
+  ]
+}
