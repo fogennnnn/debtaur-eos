@@ -1,0 +1,3 @@
+# Local runtime data (the ledger is audit history, not source — it anchors
+# the signed rulesets on first trusted run and must never be committed).
+data/ledger.jsonl

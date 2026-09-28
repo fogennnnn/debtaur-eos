@@ -1,0 +1,88 @@
+{
+  "sop_id": "SOP-HIRE-01",
+  "title": "Who approves an offer, and when a renewal needs a fresh yes",
+  "demo_story": "Offers need the hiring manager plus a director above $150,000 — but the paper process only covers first hires and stays silent on contractor renewals.",
+  "version": {
+    "id": "sop_hire_01_v1.0.0",
+    "version_hash": "sha256:a7e068cf87b4cdac59ec9dd530b3ba4c1a74d755d00fface2381c5032cf6cc6a",
+    "effective_date": "2026-03-02",
+    "signed_by": "people-lead"
+  },
+  "issue_prefix": "ISS-HIRE-2026",
+  "offer_threshold": 150000,
+  "hiring_window": { "from": "2026-01-01", "to": "2026-12-31" },
+  "premises": [
+    {
+      "id": "PREMISE_HIRE_01_CANDIDATE_NAMED",
+      "description": "The offer names the candidate.",
+      "evaluator_key": "text-present",
+      "params": { "field": "candidate_name" },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_HIRE_02_ROLE_LISTED",
+      "description": "The role type must be explicitly listed (employee or contractor).",
+      "evaluator_key": "value-in-allowlist",
+      "params": { "field": "role_type", "values": ["employee", "contractor"] },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_HIRE_03_MANAGER_APPROVAL",
+      "description": "Every offer requires the hiring manager's signature.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "hiring_manager", "label": "hiring manager" },
+      "escalate_on": ["hr"]
+    },
+    {
+      "id": "PREMISE_HIRE_04_OFFER_DATE_VALID",
+      "description": "The offer date must fall inside the open hiring window.",
+      "evaluator_key": "date-within-validity",
+      "params": { "date_field": "offer_date", "window_key": "hiring_window" },
+      "escalate_on": ["hr"]
+    },
+    {
+      "id": "PREMISE_HIRE_05_OVER_THRESHOLD_NEEDS_DIRECTOR",
+      "description": "Offers above $150,000 require an explicit director override signature.",
+      "evaluator_key": "amount-over-threshold-needs-override",
+      "params": {
+        "amount_field": "compensation",
+        "threshold_field": "offer_threshold",
+        "override_signer": "director",
+        "override_label": "director"
+      },
+      "escalate_on": ["hr"]
+    },
+    {
+      "id": "PREMISE_HIRE_06_RENEWAL_NEEDS_FRESH_APPROVAL",
+      "description": "A contractor renewal is not a first hire: it requires a fresh re-approval signature.",
+      "evaluator_key": "signature-required-when",
+      "params": {
+        "when_field": "is_renewal",
+        "when_value": true,
+        "signer": "reapprover",
+        "label": "renewal approver"
+      },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_HIRE_07_HR_EXECUTION",
+      "description": "Issuing the offer requires the HR executor's signature over the approved state.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "hr", "label": "HR executor" },
+      "escalate_on": []
+    }
+  ],
+  "signers": [
+    { "key": "hiring_manager", "label": "Hiring manager" },
+    { "key": "director", "label": "Director (override above $150,000)" },
+    { "key": "reapprover", "label": "Renewal approver" },
+    { "key": "hr", "label": "HR executor" }
+  ],
+  "input_fields": [
+    { "key": "candidate_name", "label": "Candidate name", "type": "text" },
+    { "key": "role_type", "label": "Role type", "type": "choice", "choices": ["employee", "contractor"] },
+    { "key": "compensation", "label": "Total compensation ($)", "type": "amount" },
+    { "key": "offer_date", "label": "Offer date (YYYY-MM-DD)", "type": "date", "default": "today" },
+    { "key": "is_renewal", "label": "Is this a contractor renewal?", "type": "yesno" }
+  ]
+}

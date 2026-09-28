@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Rules Stay — Spend Policy, Live</title>
+<style>
+  :root{
+    --paper:#f6f2e8; --paper2:#efe9da; --card:#fffdf7; --ink:#1c2027; --ink2:#4a5160;
+    --line:#d9d1bf; --brass:#8a6d2b; --green:#1e6f43; --greenbg:#e3f0e7;
+    --red:#a92e24; --redbg:#f7e4e0; --amber:#96690a; --amberbg:#f6ecd2;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;
+    background-image:radial-gradient(#e4dcc8 1px,transparent 1px);background-size:22px 22px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+    border-bottom:3px double var(--brass);padding-bottom:14px;margin-bottom:18px}
+  .brand{font-family:var(--serif);font-size:clamp(26px,4vw,38px);margin:0;letter-spacing:.5px}
+  .brand em{color:var(--brass);font-style:normal}
+  .tag{margin:2px 0 0;color:var(--ink2);font-size:15px;max-width:62ch}
+  .badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;font-size:13px;font-family:var(--mono)}
+  .dot{width:10px;height:10px;border-radius:50%;background:#999}
+  .dot.ok{background:var(--green)} .dot.bad{background:var(--red)}
+  /* progress rail */
+  .rail{display:flex;gap:0;margin:18px 0 6px;flex-wrap:wrap}
+  .node{flex:1 1 120px;background:var(--card);border:1px solid var(--line);border-left:none;
+    padding:10px 12px;font-size:13px;min-width:120px}
+  .node:first-child{border-left:1px solid var(--line);border-radius:10px 0 0 10px}
+  .node:last-child{border-radius:0 10px 10px 0}
+  .node .k{font-family:var(--mono);font-size:11px;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em}
+  .node .t{font-weight:650}
+  .node.done{border-bottom:4px solid var(--brass)}
+  .node.now{border-bottom:4px solid var(--ink);background:#fff}
+  .node.locked{opacity:.45}
+  .node button{all:unset;cursor:pointer;display:block;width:100%}
+  .node.locked button{cursor:not-allowed}
+  /* presenter bar */
+  .presenter{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--ink);color:#f3efe4;
+    border-radius:12px;padding:14px 16px;margin:14px 0 20px}
+  .presenter .hint{font-size:13px;opacity:.85}
+  .btn{font:inherit;font-weight:700;border-radius:9px;padding:10px 18px;cursor:pointer;border:2px solid transparent}
+  .btn.next{background:#f3efe4;color:var(--ink)}
+  .btn.next:disabled{opacity:.45;cursor:wait}
+  .btn.ghost{background:transparent;color:#f3efe4;border-color:#6b7280}
+  .btn.ghost:disabled{opacity:.4;cursor:not-allowed}
+  /* stage */
+  .stage{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px;
+    box-shadow:0 12px 30px rgba(28,32,39,.10);min-height:340px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+  .stageline{font-family:var(--serif);font-size:clamp(22px,3.4vw,32px);margin:6px 0 10px;line-height:1.25}
+  .lede{font-size:16.5px;max-width:64ch}
+  .reqcard{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+  .req{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+  .req .k{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);font-family:var(--mono)}
+  .req .v{font-weight:700;font-size:17px}
+  /* stamp */
+  .stampwrap{display:flex;justify-content:center;margin:20px 0 8px}
+  .stamp{font-family:var(--serif);font-weight:700;font-size:clamp(30px,6vw,52px);letter-spacing:.06em;
+    padding:8px 34px;border:5px solid;border-radius:10px;transform:rotate(-4deg);
+    animation:stampin .55s cubic-bezier(.2,2.4,.4,1) both;text-transform:uppercase}
+  .stamp.allow{color:var(--green);border-color:var(--green);background:var(--greenbg)}
+  .stamp.stop{color:var(--red);border-color:var(--red);background:var(--redbg)}
+  .stamp.owner{color:var(--amber);border-color:var(--amber);background:var(--amberbg)}
+  @keyframes stampin{0%{opacity:0;transform:rotate(-4deg) scale(1.8)}60%{opacity:1;transform:rotate(-4deg) scale(.94)}100%{opacity:1;transform:rotate(-4deg) scale(1)}}
+  .verdict{text-align:center;font-size:17px;max-width:60ch;margin:0 auto}
+  .checks{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
+  .checks li{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--brass);
+    border-radius:8px;padding:9px 13px;font-size:14.5px;animation:rise .5s ease both}
+  .checks li.bad{border-left-color:var(--red)} .checks li.good{border-left-color:var(--green)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .issue{margin-top:16px;border:2px dashed var(--brass);border-radius:10px;padding:14px 16px;background:#fff;
+    animation:rise .5s ease both}
+  .issue h4{margin:0 0 6px;font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+  /* tabs */
+  .tabs{display:flex;gap:8px;margin:26px 0 0;flex-wrap:wrap}
+  .tab{font:inherit;font-weight:700;padding:10px 20px;border-radius:10px 10px 0 0;cursor:pointer;
+    background:var(--paper2);border:1px solid var(--line);border-bottom:none;color:var(--ink2)}
+  .tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 -4px 10px rgba(28,32,39,.06)}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:0 12px 12px 12px;padding:22px;min-height:260px}
+  .panel h3{font-family:var(--serif);margin-top:0}
+  .plain3{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .plain3 div{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:12px 14px}
+  .plain3 .k{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--brass)}
+  table.ledger{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.ledger th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+    text-align:left;color:var(--ink2);border-bottom:2px solid var(--line);padding:6px}
+  table.ledger td{border-bottom:1px solid var(--line);padding:8px 6px;vertical-align:top}
+  .hash{font-family:var(--mono);font-size:12px;word-break:break-all}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 10px}
+  .pill.allow{background:var(--greenbg);color:var(--green)} .pill.stop{background:var(--redbg);color:var(--red)}
+  .pill.owner{background:var(--amberbg);color:var(--amber)}
+  details{margin-top:8px;font-size:13px} summary{cursor:pointer;color:var(--brass);font-weight:650}
+  .chainok{display:flex;gap:10px;align-items:center;background:var(--paper);border:1px solid var(--line);
+    border-radius:9px;padding:10px 14px;margin-bottom:14px;font-family:var(--mono);font-size:13px}
+  footer{margin-top:26px;color:var(--ink2);font-size:13px;font-family:var(--mono)}
+  .err{background:var(--redbg);border:2px solid var(--red);border-radius:10px;padding:16px}
+  @media(max-width:640px){.stage{padding:16px}.node{flex:1 1 45%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 class="brand" id="brand">The Rules <em>Stay</em></h1>
+      <p class="tag" id="tagline"></p>
+    </div>
+    <span class="badge" id="integrityBadge"><span class="dot" id="integrityDot"></span><span id="integrityText">checking records…</span></span>
+  </header>
+
+  <div class="rail" id="rail" role="navigation" aria-label="Guided run progress"></div>
+
+  <div class="presenter">
+    <button class="btn next" id="btnNext">Begin the run →</button>
+    <button class="btn ghost" id="btnBack" disabled>← Back</button>
+    <button class="btn ghost" id="btnAuto">▶ Auto-play</button>
+    <button class="btn ghost" id="btnRestart">Restart</button>
+    <span class="hint" id="presenterHint"></span>
+  </div>
+
+  <section class="stage" id="stage" aria-live="polite"></section>
+
+  <div class="tabs" role="tablist" aria-label="Three views of the same run">
+    <button class="tab" role="tab" id="tab-owner" aria-selected="true" data-tab="owner">Owner's view</button>
+    <button class="tab" role="tab" id="tab-auditor" aria-selected="false" data-tab="auditor">Auditor's ledger</button>
+    <button class="tab" role="tab" id="tab-advisor" aria-selected="false" data-tab="advisor">Advisor's report</button>
+  </div>
+  <section class="panel" id="panel" role="tabpanel"></section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script type="module">
+/* =====================================================================
+   ALL USER-FACING COPY — EDIT HERE (final wording pass happens here).
+   No other section below contains sentences shown to the audience.
+   ===================================================================== */
+const COPY = {
+  tagline: "One spend policy, run live four times — so a handover never becomes a hole.",
+  footer: "How to open: npm run demo → http://localhost:8080/  ·  zero setup, nothing leaves this machine.",
+  presenter: {
+    start: "Press Begin. Each moment plays in order — the stop must be watched, not skipped.",
+    watching: (s) => `Watching… continue unlocks in ${s}s — let the room see the stop.`,
+    ready: "Ready — continue when the room has seen it.",
+    back: "You can revisit what the room has already seen. You cannot jump ahead.",
+    autoOn: "Auto-play on — the run advances itself. Press any step button to take over.",
+    autoOff: "Auto-play off — you are presenting again.",
+    atEnd: "Run complete. The close below is the offer — land it, then open the floor.",
+    restarted: "Fresh page in the record book. Press Begin when the room is ready."
+  },
+  rail: [
+    { k: "Opening", t: "When a manager leaves" },
+    { k: "Moment 1", t: "A clean approval" },
+    { k: "Moment 2", t: "A stop, explained" },
+    { k: "Moment 3", t: "Flagged for the owner" },
+    { k: "Moment 4", t: "The policy protects itself" },
+    { k: "Close", t: "What you can offer" }
+  ],
+  intro: {
+    eyebrow: "A live run · one policy · four moments",
+    headline: "When a manager leaves, the rules stay.",
+    lede: "This is your client's spend policy, written down and signed: who can spend, who signs above $10,000, and proof the vendor is still active at payout. Today it runs four times, live, in front of you — including the moment it says no. Figures on stage are samples standing in for the client's own; theirs drop in without changing the run.",
+    bullets: [
+      "Small amounts move with two signatures — department head plus finance.",
+      "Anything above $10,000 needs the owner's override signature. No override, no payout.",
+      "Every answer is written into a permanent record, in order, each one sealed to the last."
+    ],
+    policyLine: (t) => `The policy on stage: “${t}”. Signed and live — the run below uses it exactly as written.`
+  },
+  steps: [
+    {
+      eyebrow: "Moment 1 of 4 · the policy working",
+      headline: "A $7,500 payment, approved on its own.",
+      context: "The department head signed. Finance signed. Acme Supplies is on the active list, and $7,500 sits inside the $10,000 spend authority.",
+      verdict: "Approved — every requirement met, so the payout proceeds. This is what a boring, correct Tuesday looks like.",
+      owner: {
+        happened: "A $7,500 payment to Acme Supplies was approved — the department head signed, finance signed, the vendor is active, and the amount is inside the $10,000 spend authority.",
+        means: "The policy worked without chasing anyone. The right signatures were present, so the money moved.",
+        do: "Nothing to do. This approval is now a permanent, checkable record."
+      }
+    },
+    {
+      eyebrow: "Moment 2 of 4 · the stop — watch this one",
+      headline: "A $3,200 payment, stopped cold.",
+      context: "The department head signed for a $3,200 payment to Initech LLC — but the finance sign-off never came. Small amount, missing signature.",
+      verdict: "STOPPED — the finance sign-off was missing, so nothing moved. A missing signature is never treated as a yes.",
+      owner: {
+        happened: "A $3,200 payment to Initech LLC was stopped — the finance officer never signed.",
+        means: "No signature, no payout. The policy stopped instead of guessing, even though the amount was small.",
+        do: "Ask the finance officer to review and sign, then run it again. The reason is already written down for them."
+      }
+    },
+    {
+      eyebrow: "Moment 3 of 4 · the dangerous one",
+      headline: "A $12,000 payout, signed — but never approved.",
+      context: "Finance signed a $12,000 payment to Acme Supplies. Everything looks signed — but nobody gave the owner's override for spending above $10,000.",
+      verdict: "FLAGGED FOR THE OWNER — signed but unapproved. It was parked in front of the right person instead of slipping through or vanishing.",
+      owner: {
+        happened: "A $12,000 payout was signed for payment even though nobody approved spending above $10,000 — it was flagged for the owner instead of being paid.",
+        means: "This is the one that hurts firms: everything looked signed, but the owner's override was missing. It is now sitting with the right person, with the exact gap named.",
+        do: "Owner: add your override signature to release it — or send it back. Either way, your decision becomes part of the record."
+      }
+    },
+    {
+      eyebrow: "Moment 4 of 4 · the policy protects itself",
+      headline: "Someone edited the policy. The policy said no.",
+      context: "A superseded draft of the spend policy (expense-signoff.json) came back with the $10,000 limit quietly raised to $999,999. It no longer matches the signed fingerprint — so nothing runs on it.",
+      verdict: "STOPPED — an edited policy cannot authorize spending. The attempt itself was written into the record.",
+      owner: {
+        happened: "Someone tried to change the policy itself — raising the $10,000 limit to $999,999 — and the change was refused and written down.",
+        means: "Even the rules are protected: an edited spend policy no longer matches its signed fingerprint, so that policy goes dark while the others stay live — the change stops at the spend-policy surface. Quiet edits cannot widen spend authority.",
+        do: "Only a fresh signature from the person who owns the policy can change it. Until then, the signed version stands."
+      }
+    }
+  ],
+  close: {
+    eyebrow: "The close · the offer",
+    headline: "Handovers stop being holes.",
+    lede: "Your clients' spend rules, signature requirements, and vendor checks keep enforcing themselves — through holidays, handovers, and exits. What you just watched is what each of their managers leaves behind: rules that still say no when they must.",
+    bullets: [
+      "Every approval names who signed, under which version of the rules.",
+      "Every stop names exactly what is missing and who must act.",
+      "Every record links to the one before it — checkable years later.",
+      "Today's figures are samples. The client's thresholds, signers, and vendors take their place with a fresh signature — the run stays identical."
+    ],
+    line: "Offer it as continuity: their policies, still standing, whoever walks out the door."
+  },
+  ownerTab: {
+    title: "Owner's view — in plain words",
+    k1: "What happened", k2: "What it means", k3: "What to do",
+    introHappened: "Nothing has run yet. The signed spend policy is loaded and waiting — who can spend, who signs above $10,000, vendor still active at payout.",
+    introMeans: "When you press Begin, each moment will be explained here in plain words, as it happens.",
+    introDo: "Watch the stage. After the run, this tab is the summary you can hand to any owner.",
+    closeHappened: "All four moments ran: one approval, one stop, one owner flag, one blocked policy edit — each written into the record in order.",
+    closeMeans: "The policy held without its author in the room. That is the product: continuity a client can buy.",
+    closeDo: "Pick the next process to protect — payouts are proven; ask which surface worries them most."
+  },
+  auditorTab: {
+    title: "Auditor's ledger — the permanent record",
+    sub: "Each entry fingerprints the one before it. Entries appear here only as the run reaches them — never ahead.",
+    empty: "No entries yet — the record book opens when the run begins.",
+    cols: ["#", "Time", "Outcome", "Action", "Fingerprints"],
+    chainOk: (n) => `Record verified in this page · ${n} ${n === 1 ? "entry" : "entries"} · each fingerprint links to the one before`,
+    chainBad: "Record check FAILED in this page — halt the demo and say so.",
+    serverOk: "Office file check: anchored + linked — the signed policy on file matches what ran.",
+    serverBad: "Office file check needs attention — see the advisor's report for detail."
+  },
+  advisorTab: {
+    title: "Advisor's report — full detail",
+    reasoningLabel: "Step-by-step reasoning — how the check was decided",
+    followupLabel: "Follow-up card — who must act",
+    integrityLabel: "Record integrity",
+    introBody: "The signed spend policy is loaded. Select moments as they run to see each full check log here.",
+    needSig: "Signature required:",
+    contextLabel: "Inputs on record:"
+  },
+  stamp: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Owner review" },
+  statusWord: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Flagged for owner" }
+};
+/* ======================= END OF USER-FACING COPY ======================= */
+
+import { evaluateAction } from "/src/engine.js";
+import { appendDecision, verifyChain, getEntries, clearLedger } from "/src/ledger.js";
+import { verifyRulesetIntegrity, buildTamperRefusal } from "/src/sequence.js";
+import { resetIssueCounter } from "/src/engine.js";
+
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), panel = $("panel"), rail = $("rail");
+const btnNext = $("btnNext"), btnBack = $("btnBack"), btnAuto = $("btnAuto"), btnRestart = $("btnRestart");
+const hint = $("presenterHint");
+
+const S = {
+  seqDef: null, rules: null, integrity: null,
+  frame: -1,            // -1 intro, 0..3 moments, 4 close
+  furthest: -1,
+  results: [null, null, null, null],
+  tab: "owner",
+  revealTimer: null, autoTimer: null, autoplay: false,
+  revealDone: true, revealCount: null
+};
+
+$("tagline").textContent = COPY.tagline;
+$("footer").textContent = COPY.footer;
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const short = (h) => { const s = String(h ?? ""); return s.length > 18 ? s.slice(0, 10) + "…" + s.slice(-6) : s; };
+const sigList = (req) => Object.keys(req?.signatures ?? {}).filter((k) => req.signatures[k] === true);
+const stampClass = (st) => st === "AUTHORIZED" ? "allow" : st === "ESCALATED" ? "owner" : "stop";
+
+/* ---------- load ---------- */
+async function load() {
+  try {
+    const [seqRes, intRes] = await Promise.all([fetch("/api/sequence"), fetch("/api/integrity")]);
+    if (!seqRes.ok) throw new Error("sequence service returned " + seqRes.status);
+    const seqPayload = await seqRes.json();
+    S.seqDef = seqPayload.sequence;
+    const files = Object.values(seqPayload.rulesets ?? {});
+    S.rules = files.find((r) => r?.sop_id === S.seqDef?.sop_id) ?? files[0] ?? null;
+    if (!S.rules) throw new Error("no spend policy arrived with the sequence");
+    try { S.integrity = intRes.ok ? await intRes.json() : null; }
+    catch { S.integrity = null; }
+    renderBadge(); renderRail(); renderStage(); renderPanel();
+    hint.textContent = COPY.presenter.start;
+  } catch (e) {
+    stage.innerHTML = `<div class="err"><strong>The demo could not load.</strong><br>${esc(e?.message ?? e)}<br><br>Is the server running? <span class="hash">npm run demo</span> then open <span class="hash">http://localhost:8080/</span></div>`;
+    hint.textContent = "Load failed — start the server and refresh.";
+  }
+}
+
+function renderBadge() {
+  const dot = $("integrityDot"), txt = $("integrityText");
+  const row = S.integrity?.rulesets?.find((r) => r.sop_id === S.rules?.sop_id);
+  const ok = !!(row && row.hash_match && row.anchor_match !== false && S.integrity?.ledger?.chain_ok !== false);
+  dot.className = "dot " + (S.integrity ? (ok ? "ok" : "bad") : "");
+  txt.textContent = !S.integrity ? "records unreachable"
+    : ok ? "signed policy · anchored + linked" : "records need attention — see advisor report";
+}
+
+/* ---------- guided run: execute live, one moment at a time ---------- */
+function executeMoment(i) {
+  const step = S.seqDef.steps[i];
+  if (step?.tamper) {
+    const altered = JSON.parse(JSON.stringify(S.rules));
+    altered[step.tamper.field] = step.tamper.value;
+    const check = verifyRulesetIntegrity(altered);
+    const result = buildTamperRefusal({
+      sourceLabel: `${S.rules?.sop_id ?? "policy"} (superseded draft)`,
+      rules: altered,
+      recomputedHex: check.recomputed,
+      extraContext: { mutated_field: step.tamper.field, mutated_value: step.tamper.value }
+    });
+    const entry = appendDecision(result);
+    const premise = result.refusal_details.missing_premise_id;
+    const pass = !check.ok && result.status === step.expect.status && premise === step.expect.missing_premise_id;
+    S.results[i] = { step, result, entry, premise, pass, issue: result.refusal_details.policy_issue };
+  } else {
+    const result = evaluateAction(step.request, S.rules);
+    const entry = appendDecision(result, step.request);
+    let premise = null, issue = null;
+    if (result.status === "REFUSED") { premise = result.refusal_details.missing_premise_id; issue = result.refusal_details.policy_issue; }
+    if (result.status === "ESCALATED") { premise = result.escalation_details.unsatisfied_premise_id; issue = result.escalation_details.policy_issue; }
+    const want = step.expect.unsatisfied_premise_id ?? step.expect.missing_premise_id ?? null;
+    const pass = result.status === step.expect.status && (want === null || premise === want);
+    S.results[i] = { step, result, entry, premise, pass, issue };
+  }
+  return S.results[i];
+}
+
+function gotoFrame(f) {
+  stopAuto();
+  if (f >= 0 && f <= 3) {
+    if (f > S.furthest + 1) return;               // never jump ahead
+    if (!S.results[f]) executeMoment(f);          // run live on arrival
+  }
+  if (f === 4 && S.furthest < 3) return;
+  S.frame = f;
+  S.furthest = Math.max(S.furthest, f === 4 ? 3 : f);
+  beginRevealLock();
+  renderRail(); renderStage(); renderPanel(); updateButtons();
+}
+
+function beginRevealLock() {
+  S.revealDone = false;
+  clearTimeout(S.revealTimer);
+  let s = 3;
+  S.revealCount = s;
+  updateButtons();
+  hint.textContent = COPY.presenter.watching(s);
+  S.revealTimer = setInterval(() => {
+    s -= 1;
+    if (s <= 0) {
+      clearInterval(S.revealTimer);
+      S.revealDone = true;
+      hint.textContent = S.frame === 4 ? COPY.presenter.atEnd : COPY.presenter.ready;
+      updateButtons();
+    } else {
+      hint.textContent = COPY.presenter.watching(s);
+      btnNext.textContent = nextLabel() + ` (${s})`;
+    }
+  }, 1000);
+}
+
+function nextLabel() {
+  if (S.frame === -1) return "Begin the run →";
+  if (S.frame <= 2) return `Continue to moment ${S.frame + 2} →`;
+  if (S.frame === 3) return "Continue to the close →";
+  return "Run complete ✓";
+}
+
+function updateButtons() {
+  const lockAhead = S.frame >= 4;
+  btnNext.textContent = S.revealDone || S.frame === -1 ? nextLabel()
+    : (S.frame === -1 ? nextLabel() : nextLabel() + ` (${S.revealCount ?? "…"})`);
+  btnNext.disabled = lockAhead || (S.frame >= 0 && !S.revealDone);
+  if (S.frame === -1) btnNext.disabled = false;
+  btnBack.disabled = S.frame <= -1;
+  btnAuto.textContent = S.autoplay ? "⏸ Auto-play" : "▶ Auto-play";
+}
+
+function stopAuto() {
+  S.autoplay = false;
+  clearTimeout(S.autoTimer);
+  updateButtons();
+}
+
+/* ---------- rail ---------- */
+function renderRail() {
+  rail.innerHTML = "";
+  COPY.rail.forEach((n, idx) => {
+    const f = idx - 1;                              // rail idx 0 = intro(-1) … 5 = close(4)
+    const visited = f <= S.furthest || (f === -1);
+    const cls = f === S.frame ? "now" : visited ? "done" : "locked";
+    const d = document.createElement("div");
+    d.className = "node " + cls;
+    const b = document.createElement("button");
+    b.innerHTML = `<span class="k">${esc(n.k)}</span><br><span class="t">${esc(n.t)}</span>`;
+    b.disabled = !visited || f === S.frame;
+    b.onclick = () => { if (visited) gotoFrame(f); };
+    if (!visited) hint.textContent = COPY.presenter.back;
+    d.appendChild(b);
+    rail.appendChild(d);
+  });
+}
+
+/* ---------- stage ---------- */
+function reqCards(req, tamper) {
+  if (tamper) {
+    return `<div class="reqcard">
+      <div class="req"><div class="k">Spend authority on file</div><div class="v">$10,000</div></div>
+      <div class="req"><div class="k">Arrived claiming</div><div class="v">$999,999</div></div>
+      <div class="req"><div class="k">Signed fingerprint</div><div class="v">no longer matches</div></div>
+    </div>`;
+  }
+  const yn = (k) => req?.signatures?.[k] ? "Signed ✓" : "Missing ✗";
+  return `<div class="reqcard">
+    <div class="req"><div class="k">Amount</div><div class="v">$${esc(Number(req?.amount ?? 0).toLocaleString("en-US"))}</div></div>
+    <div class="req"><div class="k">Vendor</div><div class="v">${esc(req?.vendor)}</div></div>
+    <div class="req"><div class="k">Department head</div><div class="v">${esc(yn("dept_head"))}</div></div>
+    <div class="req"><div class="k">Owner override</div><div class="v">${esc(yn("ceo"))}</div></div>
+    <div class="req"><div class="k">Finance officer</div><div class="v">${esc(yn("finance"))}</div></div>
+  </div>`;
+}
+
+function renderStage() {
+  if (S.frame === -1) {
+    const c = COPY.intro;
+    stage.innerHTML = `
+      <div class="eyebrow">${esc(c.eyebrow)}</div>
+      <h2 class="stageline">${esc(c.headline)}</h2>
+      <p class="lede">${esc(c.lede)}</p>
+      <ul class="checks">${c.bullets.map((b, i) => `<li style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
+      <div class="issue" style="animation-delay:1.2s"><h4>Signed policy on stage</h4>${esc(c.policyLine(S.rules?.title ?? ""))}</div>`;
+    return;
+  }
+  if (S.frame === 4) {
+    const c = COPY.close;
+    const words = ["Approved", "Stopped", "Owner review", "Stopped"];
+    stage.innerHTML = `
+      <div class="eyebrow">${esc(c.eyebrow)}</div>
+      <h2 class="stageline">${esc(c.headline)}</h2>
+      <p class="lede">${esc(c.lede)}</p>
+      <ul class="checks">${c.bullets.map((b, i) => `<li class="good" style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
+      <div class="reqcard">${S.results.map((r, i) => r ? `<div class="req"><div class="k">Moment ${i + 1}</div><div class="v">${esc(words[i])}</div></div>` : "").join("")}</div>
+      <div class="issue" style="animation-delay:1.2s"><h4>The offer</h4>${esc(c.line)}</div>`;
+    return;
+  }
+  const c = COPY.steps[S.frame];
+  const r = S.results[S.frame];
+  const st = r?.result?.status ?? "…";
+  const lines = r?.result?.derivation ?? r?.result?.derivation_chain ?? [];
+  stage.innerHTML = `
+    <div class="eyebrow">${esc(c.eyebrow)}</div>
+    <h2 class="stageline">${esc(c.headline)}</h2>
+    <p class="lede">${esc(c.context)}</p>
+    ${reqCards(r?.step?.request, !!r?.step?.tamper)}
+    <div class="stampwrap"><div class="stamp ${stampClass(st)}">${esc(COPY.stamp[st] ?? st)}</div></div>
+    <p class="verdict">${esc(c.verdict)}</p>
+    <ul class="checks">${lines.slice(1).map((l, i) => `<li class="${/satisfied|AUTHORIZED|within|present|verified|supported/i.test(l) ? "good" : /REFUSED|ESCALATED|missing|not |exceeds|failure/i.test(l) ? "bad" : ""}" style="animation-delay:${0.9 + i * 0.3}s">${esc(l)}</li>`).join("")}</ul>
+    ${r?.issue ? `<div class="issue" style="animation-delay:${0.9 + lines.length * 0.3}s"><h4>Follow-up card opened · ${esc(r.issue.id)}</h4><div><strong>${esc(r.issue.title)}</strong><br>${esc(issuePlain(r))}</div></div>` : ""}`;
+}
+
+function issuePlain(r) {
+  if (!r) return "";
+  if (r.result.status === "ESCALATED")
+    return `A signed payout is waiting on the owner's override — the gap is ${r.premise}. The owner decides next.`;
+  if (r.premise === "RULESET_INTEGRITY")
+    return "The policy itself was edited after signing — only a fresh signature from the policy owner can change it.";
+  if (r.premise === "PREMISE_FIN_05_FINANCE_SIG")
+    return "The finance officer's sign-off is missing — they review, sign, and it runs again.";
+  return `The requirement ${r.premise} was not met — the named signer acts next.`;
+}
+
+/* ---------- viewer tabs (never reset the run) ---------- */
+document.querySelectorAll(".tab").forEach((t) => {
+  t.onclick = () => {
+    S.tab = t.dataset.tab;
+    document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", x === t ? "true" : "false"));
+    renderPanel();
+  };
+});
+
+function renderPanel() {
+  if (S.tab === "owner") renderOwner();
+  else if (S.tab === "auditor") renderAuditor();
+  else renderAdvisor();
+}
+
+function renderOwner() {
+  const c = COPY.ownerTab;
+  let h, m, d;
+  if (S.frame === -1) { h = c.introHappened; m = c.introMeans; d = c.introDo; }
+  else if (S.frame === 4) { h = c.closeHappened; m = c.closeMeans; d = c.closeDo; }
+  else { const o = COPY.steps[S.frame].owner; h = o.happened; m = o.means; d = o.do; }
+  panel.innerHTML = `<h3>${esc(c.title)}</h3>
+    <div class="plain3">
+      <div><div class="k">${esc(c.k1)}</div>${esc(h)}</div>
+      <div><div class="k">${esc(c.k2)}</div>${esc(m)}</div>
+      <div><div class="k">${esc(c.k3)}</div>${esc(d)}</div>
+    </div>`;
+}
+
+function renderAuditor() {
+  const c = COPY.auditorTab;
+  const entries = getEntries();
+  const v = verifyChain();
+  const chainLine = entries.length === 0 ? "" : (v.ok
+    ? `<div class="chainok"><span class="dot ok"></span>${esc(c.chainOk(entries.length))}</div>`
+    : `<div class="chainok"><span class="dot bad"></span>${esc(c.chainBad)}</div>`);
+  const rows = entries.map((e) => `<tr>
+    <td><strong>${e.seq}</strong></td><td class="hash">${esc((e.timestamp ?? "").slice(11, 19))}</td>
+    <td><span class="pill ${stampClass(e.status)}">${esc(COPY.statusWord[e.status] ?? e.status)}</span></td>
+    <td class="hash">${esc(e.action_id)}</td>
+    <td class="hash">prev ${esc(short(e.prev_hash))}<br>hash ${esc(short(e.hash))}
+      <details><summary>full fingerprints</summary>prev_hash<br>${esc(e.prev_hash)}<br><br>hash<br>${esc(e.hash)}<br><br>policy fingerprint<br>${esc(e.rule_version_hash)}</details></td>
+  </tr>`).join("");
+  const server = S.integrity ? (S.integrity.ok
+    ? `<div class="chainok"><span class="dot ok"></span>${esc(c.serverOk)}</div>`
+    : `<div class="chainok"><span class="dot bad"></span>${esc(c.serverBad)}</div>`) : "";
+  panel.innerHTML = `<h3>${esc(c.title)}</h3><p>${esc(c.sub)}</p>${chainLine}${server}
+    ${entries.length === 0 ? `<p>${esc(c.empty)}</p>` : `<table class="ledger"><thead><tr>${c.cols.map((x) => `<th>${esc(x)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`}`;
+}
+
+function renderAdvisor() {
+  const c = COPY.advisorTab;
+  const row = S.integrity?.rulesets?.find((r) => r.sop_id === S.rules?.sop_id);
+  const integ = row
+    ? `Signed fingerprint ${row.hash_match ? "matches" : "MISMATCH"} · office file ${row.anchor_match === false ? "differs" : row.anchor_match === true ? "anchored" : "not yet anchored"} · version ${row.version ?? "?"}` +
+      `<br><span class="hash">on file: ${esc(row.stored_hash)}<br>recomputed: ${esc(row.recomputed_hash)}</span>`
+    : "Office file check unavailable — showing only this page's record.";
+  if (S.frame === -1) {
+    panel.innerHTML = `<h3>${esc(c.title)}</h3><p>${esc(c.introBody)}</p>
+      <p><strong>${esc(S.rules?.title ?? "")}</strong><br>
+      ${esc(c.contextLabel)} spend authority $${esc(Number(S.rules?.threshold ?? 0).toLocaleString("en-US"))} · currencies ${(S.rules?.supported_currencies ?? []).map(esc).join(", ")} · vendors ${(S.rules?.active_vendors ?? []).map(esc).join(", ")}<br>
+      ${esc(c.needSig)} ${(S.rules?.signers ?? []).map((s) => esc(s.label)).join(" · ")}</p>
+      <p><strong>${esc(c.integrityLabel)}:</strong><br>${integ}</p>`;
+    return;
+  }
+  if (S.frame === 4) {
+    panel.innerHTML = `<h3>${esc(c.title)} — run summary</h3>
+      <table class="ledger"><thead><tr><th>#</th><th>Outcome</th><th>Gap named</th><th>Follow-up</th><th>Check</th></tr></thead><tbody>
+      ${S.results.map((r, i) => `<tr><td><strong>${i + 1}</strong></td>
+        <td><span class="pill ${stampClass(r.result.status)}">${esc(COPY.statusWord[r.result.status] ?? r.result.status)}</span></td>
+        <td class="hash">${esc(r.premise ?? "—")}</td><td class="hash">${esc(r.issue?.id ?? "—")}</td>
+        <td>${r.pass ? "✓ as rehearsed" : "✗ differs"}</td></tr>`).join("")}</tbody></table>
+      <p style="margin-top:12px"><strong>${esc(c.integrityLabel)}:</strong><br>${integ}</p>`;
+    return;
+  }
+  const r = S.results[S.frame];
+  if (!r) { panel.innerHTML = `<h3>${esc(c.title)}</h3><p>${esc(c.introBody)}</p>`; return; }
+  const lines = r.result.derivation ?? r.result.derivation_chain ?? [];
+  const req = r.step.request;
+  panel.innerHTML = `<h3>${esc(c.title)} — moment ${S.frame + 1}</h3>
+    <p><span class="pill ${stampClass(r.result.status)}">${esc(COPY.statusWord[r.result.status] ?? r.result.status)}</span>
+    <span class="hash"> · ${esc(r.result.action_id)} · policy fingerprint ${esc(short(r.result.rule_version_hash))}</span></p>
+    ${req ? `<p>${esc(c.contextLabel)} $${esc(Number(req.amount ?? 0).toLocaleString("en-US"))} ${esc(req.currency ?? "")} · ${esc(req.vendor ?? "")} · signed: ${esc(sigList(req).join(", ") || "none")}</p>` : `<p>${esc(c.contextLabel)} superseded draft of expense-signoff.json (limit $10,000 → $999,999).</p>`}
+    <p><strong>${esc(c.reasoningLabel)}:</strong></p>
+    <ul class="checks">${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+    ${r.issue ? `<div class="issue"><h4>${esc(c.followupLabel)} · ${esc(r.issue.id)}</h4>
+      <div><strong>${esc(r.issue.title)}</strong><br>Gap: <span class="hash">${esc(r.premise)}</span><br>${esc(issuePlain(r))}<br>
+      <details><summary>routing detail</summary><span class="hash">${esc(JSON.stringify(r.issue.context ?? {}, null, 2))}</span></details></div></div>` : `<p>No follow-up needed — every requirement was met.</p>`}
+    <p style="margin-top:12px"><strong>${esc(c.integrityLabel)}:</strong><br>${integ}</p>`;
+}
+
+/* ---------- controls ---------- */
+btnNext.onclick = () => {
+  if (S.frame === -1) gotoFrame(0);
+  else if (S.frame <= 2) gotoFrame(S.frame + 1);
+  else if (S.frame === 3) gotoFrame(4);
+};
+btnBack.onclick = () => { if (S.frame > -1) { stopAuto(); S.frame -= 1; S.revealDone = true; clearInterval(S.revealTimer); hint.textContent = COPY.presenter.ready; renderRail(); renderStage(); renderPanel(); updateButtons(); } };
+btnRestart.onclick = () => {
+  stopAuto(); clearLedger(); resetIssueCounter();
+  S.frame = -1; S.furthest = -1; S.results = [null, null, null, null];
+  S.revealDone = true; clearInterval(S.revealTimer);
+  hint.textContent = COPY.presenter.restarted;
+  renderRail(); renderStage(); renderPanel(); updateButtons();
+};
+btnAuto.onclick = () => {
+  if (S.autoplay) { stopAuto(); hint.textContent = COPY.presenter.autoOff; return; }
+  S.autoplay = true;
+  hint.textContent = COPY.presenter.autoOn;
+  updateButtons();
+  const tick = () => {
+    if (!S.autoplay) return;
+    if (!S.revealDone) { S.autoTimer = setTimeout(tick, 1000); return; }
+    if (S.frame === 4) { stopAuto(); hint.textContent = COPY.presenter.atEnd; return; }
+    if (S.frame === -1) gotoFrame(0);
+    else if (S.frame <= 2) gotoFrame(S.frame + 1);
+    else gotoFrame(4);
+    // re-arm: gotoFrame stopped auto, so resume dwell then continue
+    S.autoplay = true; updateButtons();
+    S.autoTimer = setTimeout(tick, 6500);
+  };
+  S.autoTimer = setTimeout(tick, S.frame === -1 ? 500 : 6500);
+};
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" && !btnNext.disabled) btnNext.click();
+  if (e.key === "ArrowLeft" && !btnBack.disabled) btnBack.click();
+});
+
+load();
+</script>
+</body>
+</html>

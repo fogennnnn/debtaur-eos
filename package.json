@@ -1,0 +1,13 @@
+{
+  "name": "debtaur-sop-enforcer",
+  "version": "1.0.0",
+  "description": "Deterministic SOP policy-enforcer CLI demo (Debtaur policy-layer principles). Zero dependencies.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "demo": "node src/serve.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

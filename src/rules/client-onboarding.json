@@ -1,0 +1,74 @@
+{
+  "sop_id": "SOP-ONB-01",
+  "title": "Who we take on as a client, and who says yes",
+  "demo_story": "Taking on a new client needs identity, credit and sanctions checks plus a partner's yes — but the paper checklist is silent on re-engaging a client it once rejected.",
+  "version": {
+    "id": "sop_onb_01_v1.0.0",
+    "version_hash": "sha256:29e551c59b0a9cfab3b17b2f5eb42dd2692f0b4ff4c5f60b70bc9b906d99fe33",
+    "effective_date": "2026-02-02",
+    "signed_by": "managing-partner"
+  },
+  "issue_prefix": "ISS-ONB-2026",
+  "premises": [
+    {
+      "id": "PREMISE_ONB_01_CLIENT_NAMED",
+      "description": "Intake names the prospective client.",
+      "evaluator_key": "text-present",
+      "params": { "field": "client_name" },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_ONB_02_IDENTITY_VERIFIED",
+      "description": "The client's identity must verify before acceptance.",
+      "evaluator_key": "value-in-allowlist",
+      "params": { "field": "identity_status", "values": ["verified"] },
+      "escalate_on": ["onboarding"]
+    },
+    {
+      "id": "PREMISE_ONB_03_CREDIT_PASSED",
+      "description": "The client's credit check must pass before acceptance.",
+      "evaluator_key": "value-in-allowlist",
+      "params": { "field": "credit_status", "values": ["pass"] },
+      "escalate_on": ["onboarding"]
+    },
+    {
+      "id": "PREMISE_ONB_04_SANCTIONS_CLEAR",
+      "description": "The client must clear the sanctions-list screen before acceptance.",
+      "evaluator_key": "value-in-allowlist",
+      "params": { "field": "sanctions_status", "values": ["clear"] },
+      "escalate_on": ["onboarding"]
+    },
+    {
+      "id": "PREMISE_ONB_05_PARTNER_APPROVAL",
+      "description": "Acceptance requires an approving partner's signature.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "approver", "label": "approving partner" },
+      "escalate_on": ["onboarding"]
+    },
+    {
+      "id": "PREMISE_ONB_06_NO_PRIOR_REJECTION",
+      "description": "A client with a rejection on file cannot be taken on as a fresh intake; re-engagement needs owner review.",
+      "evaluator_key": "value-in-allowlist",
+      "params": { "field": "prior_rejection", "values": [false] },
+      "escalate_on": ["approver", "onboarding"]
+    },
+    {
+      "id": "PREMISE_ONB_07_ONBOARDING_SIGNOFF",
+      "description": "Account creation requires the onboarding lead's signature over the accepted state.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "onboarding", "label": "onboarding lead" },
+      "escalate_on": []
+    }
+  ],
+  "signers": [
+    { "key": "approver", "label": "Approving partner" },
+    { "key": "onboarding", "label": "Onboarding lead (creates the account)" }
+  ],
+  "input_fields": [
+    { "key": "client_name", "label": "Prospective client name", "type": "text" },
+    { "key": "identity_status", "label": "Identity check", "type": "choice", "choices": ["unverified", "verified"] },
+    { "key": "credit_status", "label": "Credit check", "type": "choice", "choices": ["pending", "pass", "fail"] },
+    { "key": "sanctions_status", "label": "Sanctions screen", "type": "choice", "choices": ["unchecked", "clear", "hit"] },
+    { "key": "prior_rejection", "label": "Was this client rejected before?", "type": "yesno" }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "sop_id": "SOP-PAY-01",
+  "title": "Who gets paid, and checking the vendor is still active at payout",
+  "demo_story": "Paying a vendor needs an approval plus a payer — but the paper process checks the active list once at approval and stays silent when the vendor is deactivated before payout.",
+  "version": {
+    "id": "sop_pay_01_v1.0.0",
+    "version_hash": "sha256:46277abae58c685e7e9fc8f8904c7919d17e3b6bf7925c55284ffb197060970f",
+    "effective_date": "2026-04-06",
+    "signed_by": "finance-lead"
+  },
+  "issue_prefix": "ISS-PAY-2026",
+  "payment_threshold": 25000,
+  "supported_currencies": ["USD"],
+  "active_vendors": [
+    "Acme Supplies",
+    "Globex Corp",
+    "Northwind Traders"
+  ],
+  "premises": [
+    {
+      "id": "PREMISE_PAY_01_VENDOR_NAMED",
+      "description": "The payment names the vendor.",
+      "evaluator_key": "text-present",
+      "params": { "field": "vendor" },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_PAY_02_POSITIVE_AMOUNT",
+      "description": "The payment states a positive amount.",
+      "evaluator_key": "positive-amount",
+      "params": { "field": "amount" },
+      "escalate_on": []
+    },
+    {
+      "id": "PREMISE_PAY_03_CURRENCY_SUPPORTED",
+      "description": "Currency must be explicitly supported (USD).",
+      "evaluator_key": "currency-in-supported-set",
+      "params": { "field": "currency", "list": "supported_currencies" },
+      "escalate_on": ["payer"]
+    },
+    {
+      "id": "PREMISE_PAY_04_VENDOR_ACTIVE",
+      "description": "The vendor must still verify as active at payout time, even when the approval signature is valid.",
+      "evaluator_key": "vendor-active-against-list",
+      "params": { "field": "vendor", "list": "active_vendors" },
+      "escalate_on": ["payer"]
+    },
+    {
+      "id": "PREMISE_PAY_05_APPROVAL",
+      "description": "Payment requires a purchase approver's signature.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "approver", "label": "purchase approver" },
+      "escalate_on": ["payer"]
+    },
+    {
+      "id": "PREMISE_PAY_06_OVER_THRESHOLD_NEEDS_CONTROLLER",
+      "description": "Payments above $25,000 require an explicit controller override signature.",
+      "evaluator_key": "amount-over-threshold-needs-override",
+      "params": {
+        "amount_field": "amount",
+        "threshold_field": "payment_threshold",
+        "override_signer": "controller",
+        "override_label": "controller"
+      },
+      "escalate_on": ["payer"]
+    },
+    {
+      "id": "PREMISE_PAY_07_PAYER_EXECUTION",
+      "description": "Releasing the payment requires the payer's signature over the approved state.",
+      "evaluator_key": "signature-present",
+      "params": { "signer": "payer", "label": "payer" },
+      "escalate_on": []
+    }
+  ],
+  "signers": [
+    { "key": "approver", "label": "Purchase approver" },
+    { "key": "controller", "label": "Controller (override above $25,000)" },
+    { "key": "payer", "label": "Payer" }
+  ],
+  "input_fields": [
+    { "key": "vendor", "label": "Vendor name", "type": "text" },
+    { "key": "amount", "label": "Payment amount ($)", "type": "amount" },
+    { "key": "currency", "label": "Currency", "type": "text", "default": "USD" }
+  ]
+}
