@@ -171,7 +171,7 @@ const COPY = {
   intro: {
     eyebrow: "A live run · one policy · four moments",
     headline: "When a manager leaves, the rules stay.",
-    lede: "This is your client's spend policy, written down and signed: who can spend, who signs above $10,000, and proof the vendor is still active at payout. Today it runs four times, live, in front of you — including the moment it says no. Figures on stage are samples standing in for the client's own; theirs drop in without changing the run.",
+    lede: "This is your client's spend policy, written down and signed: who can spend, who signs above $10,000, and proof the vendor is still active at payout. Today it runs four times, live, in front of you — including the moment it says no. Figures on stage are samples standing in for the client's own; theirs drop in without changing the run. In EOS terms: this is a Process that the business actually follows after the Accountability Chart changes.",
     bullets: [
       "Small amounts move with two signatures — department head plus finance.",
       "Anything above $10,000 needs the owner's override signature. No override, no payout.",
@@ -235,7 +235,8 @@ const COPY = {
       "Every record links to the one before it — checkable years later.",
       "Today's figures are samples. The client's thresholds, signers, and vendors take their place with a fresh signature — the run stays identical."
     ],
-    line: "Offer it as continuity: their policies, still standing, whoever walks out the door."
+    line: "Offer it as continuity: their policies, still standing, whoever walks out the door.",
+    tline: "In Traction / EOS language: the business can now follow its own documented processes without the original author in the room."
   },
   ownerTab: {
     title: "Owner's view — in plain words",
@@ -268,17 +269,17 @@ const COPY = {
   },
   callouts: {
     opening: { what: "Manager leaves. The signed policy remains the only authority.",
-      why: "Why it matters: This is the moment most businesses lose control." },
+      why: "Why it matters: This is what an inherited SOP looks like when the person who wrote it is gone." },
     m0: { what: "Two required signatures present. Policy allows the $7,500 payout.",
-      why: "Why it matters: Routine decisions stay fast after people leave." },
+      why: "Why it matters: The Process still runs cleanly after the seat on the Accountability Chart is empty." },
     m1: { what: "Finance signature missing. Engine refuses. No improvisation.",
-      why: "Why it matters: This is the exact failure mode that kills transferability." },
+      why: "Why it matters: An inherited SOP must be able to say no. Most documented processes fail here." },
     m2: { what: "Amount exceeds $10,000. Only the owner override can release it.",
-      why: "Why it matters: High-value decisions stay protected even when the original manager is gone." },
+      why: "Why it matters: High-value decisions stay protected even when the original manager has left the Accountability Chart." },
     m3: { what: "Someone tried to raise the limit. Fingerprint no longer matches. Policy refuses.",
-      why: "Why it matters: The rules cannot be quietly rewritten after the owner exits." },
+      why: "Why it matters: The Process cannot be quietly rewritten after the founder exits. That is real traction." },
     close: { what: "The people changed. The rules stayed.",
-      why: "This is what process maturity looks like to a buyer or lender." }
+      why: "This is what an inherited Process Component looks like to a buyer or lender." }
   },
   stamp: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Owner review" },
   statusWord: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Flagged for owner" }
@@ -507,6 +508,7 @@ function renderStage() {
       <div class="reqcard">${S.results.map((r, i) => r ? `<div class="req"><div class="k">Moment ${i + 1}</div><div class="v">${esc(words[i])}</div></div>` : "").join("")}</div>
       <p class="closeline">Most small businesses become less sellable the day a key person leaves. This is the counter-example.</p>
       ${calloutHTML("close")}
+      <p class="lede">${esc(c.tline)}</p>
       <div class="issue" style="animation-delay:1.2s"><h4>The offer</h4>${esc(c.line)}</div>`;
     return;
   }

@@ -36,3 +36,7 @@ One honest demo-numbers line at opening (CLI note + frontend lede) and close; no
 ## What is and is not true about tamper resistance
 
 True: any partial edit — touching a policy file alone, or the file plus its own signature — is refused at load, names the file, is written into the hash-chained ledger, and darkens only that policy area while the rest of the operation stays live. Not true: resistance to a full rewrite — someone who rewrites the policy, its signature, and the ledger history consistently will boot cleanly, because the ledger carries no outside signing key. Treat this demo as tamper-evident against partial edits, not tamper-proof against a full rewrite. One tampered policy stops that policy only; everything else keeps evaluating.
+
+## Addendum 2026-09-29 — EOS framing on the demo surface (user-directed)
+
+The Task 4 "no third-party methodology branding" rule in this report is superseded for the demo page: at the user's explicit direction for the Alain Dagenais meeting, `index.html` now speaks in EOS / Traction terms (Process, Accountability Chart, inherited SOP, Process Component) as descriptive comparison language for an exit-planning audience. This is a surface-copy decision, not a product claim: the demo does not present itself as an EOS product, carries no EOS templates or branding, and the engine, rulesets, ledger, and all verified behaviors are unchanged. Verify current surface copy in `index.html` COPY block, not in this report.
