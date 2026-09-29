@@ -74,6 +74,15 @@
   .callout p:last-child{color:var(--ink2)}
   .closeline{font-family:var(--serif);font-size:clamp(19px,3vw,26px);line-height:1.4;margin:22px 0 6px;max-width:60ch}
   .btn.quiet{opacity:.55;font-size:12.5px}
+  /* chat bubbles — the guide thread, plain words, one at a time */
+  .bubbles{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+  .bubble{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--line);
+    border-radius:14px 14px 14px 4px;padding:10px 14px;max-width:62ch;
+    box-shadow:0 4px 14px rgba(28,32,39,.07);animation:bubblein .45s ease both}
+  .bubble .who{flex:none;width:26px;height:26px;border-radius:50%;background:var(--brass);color:#fff;
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px}
+  .bubble p{margin:0;font-size:14.5px}
+  @keyframes bubblein{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
   .verdict{text-align:center;font-size:17px;max-width:60ch;margin:0 auto}
   .checks{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
   .checks li{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--brass);
@@ -147,7 +156,7 @@
    No other section below contains sentences shown to the audience.
    ===================================================================== */
 const COPY = {
-  tagline: "One spend policy, run live four times — so a handover never becomes a hole.",
+  tagline: "Exit Readiness requires more than a plan. It requires processes the business can still follow when the key person is gone.",
   footer: "Run it yourself: clone debtaur-eos, npm run demo → http://localhost:8080/ · zero setup.",
   presenter: {
     start: "Press Begin. Each moment plays in order — the stop must be watched, not skipped.",
@@ -177,6 +186,7 @@ const COPY = {
       "Anything above $10,000 needs the owner's override signature. No override, no payout.",
       "Every answer is written into a permanent record, in order, each one sealed to the last."
     ],
+    onramp: "This is the on-ramp from documented SOPs to processes that actually survive the handover.",
     policyLine: (t) => `The policy on stage: “${t}”. Signed and live — the run below uses it exactly as written.`
   },
   steps: [
@@ -228,15 +238,15 @@ const COPY = {
   close: {
     eyebrow: "The close · the offer",
     headline: "Handovers stop being holes.",
-    lede: "Your clients' spend rules, signature requirements, and vendor checks keep enforcing themselves — through holidays, handovers, and exits. What you just watched is what each of their managers leaves behind: rules that still say no when they must.",
+    lede: "Your clients' spend rules, signature requirements, and vendor checks keep enforcing themselves — through holidays, handovers, and exits. What you just watched is what each of their managers leaves behind: rules that still say no when they must. That is Exit Readiness that protects — and increases — transferable value.",
     bullets: [
       "Every approval names who signed, under which version of the rules.",
       "Every stop names exactly what is missing and who must act.",
       "Every record links to the one before it — checkable years later.",
       "Today's figures are samples. The client's thresholds, signers, and vendors take their place with a fresh signature — the run stays identical."
     ],
-    line: "Offer it as continuity: their policies, still standing, whoever walks out the door.",
-    tline: "In Traction / EOS language: the business can now follow its own documented processes without the original author in the room."
+    line: "Offer it as the next step after the concept plan: the processes that turn readiness into a sellable asset.",
+    tline: "After a PlanBot concept plan, this is the missing proof: the business can actually follow its own documented processes without the original author in the room."
   },
   ownerTab: {
     title: "Owner's view — in plain words",
@@ -269,17 +279,17 @@ const COPY = {
   },
   callouts: {
     opening: { what: "Manager leaves. The signed policy remains the only authority.",
-      why: "Why it matters: This is what an inherited SOP looks like when the person who wrote it is gone." },
-    m0: { what: "Two required signatures present. Policy allows the $7,500 payout.",
-      why: "Why it matters: The Process still runs cleanly after the seat on the Accountability Chart is empty." },
-    m1: { what: "Finance signature missing. Engine refuses. No improvisation.",
-      why: "Why it matters: An inherited SOP must be able to say no. Most documented processes fail here." },
-    m2: { what: "Amount exceeds $10,000. Only the owner override can release it.",
-      why: "Why it matters: High-value decisions stay protected even when the original manager has left the Accountability Chart." },
-    m3: { what: "Someone tried to raise the limit. Fingerprint no longer matches. Policy refuses.",
-      why: "Why it matters: The Process cannot be quietly rewritten after the founder exits. That is real traction." },
+      why: "Why it matters: This is what Exit Readiness looks like when the Accountability Chart changes." },
+    m0: { what: "Two required signatures present. Policy allows the payout.",
+      why: "Why it matters: Routine decisions stay clean after the original manager is no longer in the seat." },
+    m1: { what: "Required signature missing. The system refuses. No improvisation.",
+      why: "Why it matters: Most owner-centric businesses fail exactly here. An inherited process must be able to say no." },
+    m2: { what: "Amount exceeds the threshold. Only the owner override can release it.",
+      why: "Why it matters: High-value decisions stay protected even after the key person has left. That protects enterprise value." },
+    m3: { what: "Someone tried to change the limit. The signed fingerprint no longer matches. The process refuses.",
+      why: "Why it matters: Real Exit Readiness means the rules cannot be quietly rewritten after the founder exits." },
     close: { what: "The people changed. The rules stayed.",
-      why: "This is what an inherited Process Component looks like to a buyer or lender." }
+      why: "This is what an inherited Process looks like to a buyer, a lender, or a successor." }
   },
   stamp: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Owner review" },
   statusWord: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Flagged for owner" }
@@ -326,7 +336,7 @@ async function load() {
     if (!S.rules) throw new Error("no spend policy arrived with the sequence");
     try { S.integrity = intRes.ok ? await intRes.json() : null; }
     catch { S.integrity = null; }
-    renderBadge(); renderRail(); renderStage(); renderPanel();
+    renderBadge(); renderRail(); renderStage(); renderPanel(); playBubbles();
     hint.textContent = COPY.presenter.start;
   } catch (e) {
     stage.innerHTML = `<div class="err"><strong>The demo could not load.</strong><br>${esc(e?.message ?? e)}<br><br>Is the server running? <span class="hash">npm run demo</span> then open <span class="hash">http://localhost:8080/</span></div>`;
@@ -374,8 +384,50 @@ function executeMoment(i) {
   return S.results[i];
 }
 
+const BUBBLE_FIRST_MS = 600, BUBBLE_GAP_MS = 1400, BUBBLE_TAIL_MS = 1200;
+
+function bubblesForFrame() {
+  if (S.frame === -1) return [COPY.ownerTab.introHappened, COPY.ownerTab.introMeans];
+  if (S.frame === 4) return [COPY.ownerTab.closeHappened, COPY.ownerTab.closeMeans];
+  if (S.frame >= 0 && S.frame <= 3) { const o = COPY.steps[S.frame].owner; return [o.happened, o.means, o.do]; }
+  return [];
+}
+
+function clearBubbles() {
+  (S.bubbleTimers ?? []).forEach(clearTimeout);
+  S.bubbleTimers = [];
+  const box = document.getElementById("bubbles");
+  if (box) box.innerHTML = "";
+  S.bubblesDone = true;
+}
+
+function playBubbles() {
+  clearBubbles();
+  S.bubblesDone = false;
+  const texts = bubblesForFrame();
+  const box = document.getElementById("bubbles");
+  if (!box || texts.length === 0) { S.bubblesDone = true; return; }
+  texts.forEach((t, i) => {
+    S.bubbleTimers.push(setTimeout(() => {
+      const live = document.getElementById("bubbles");
+      if (!live) return;
+      const d = document.createElement("div");
+      d.className = "bubble";
+      const a = document.createElement("span");
+      a.className = "who";
+      a.textContent = "✦";
+      const p = document.createElement("p");
+      p.textContent = t;
+      d.appendChild(a); d.appendChild(p);
+      live.appendChild(d);
+      if (i === texts.length - 1) S.bubblesDone = true;
+    }, BUBBLE_FIRST_MS + i * BUBBLE_GAP_MS));
+  });
+}
+
 function gotoFrame(f) {
   stopAuto();
+  clearBubbles();
   if (f >= 0 && f <= 3) {
     if (f > S.furthest + 1) return;               // never jump ahead
     if (!S.results[f]) executeMoment(f);          // run live on arrival
@@ -385,6 +437,7 @@ function gotoFrame(f) {
   S.furthest = Math.max(S.furthest, f === 4 ? 3 : f);
   beginRevealLock();
   renderRail(); renderStage(); renderPanel(); updateButtons();
+  playBubbles();
 }
 
 function beginRevealLock() {
@@ -392,7 +445,9 @@ function beginRevealLock() {
   clearTimeout(S.revealTimer);
   const critical = S.frame >= 0 && S.frame <= 3 &&
     ["REFUSED", "ESCALATED"].includes(S.results[S.frame]?.result?.status);
-  let s = (S.frame === 1 || S.frame === 2) ? 5 : 3;
+  const nBubbles = bubblesForFrame().length;
+  const bubbleMs = nBubbles === 0 ? 0 : BUBBLE_FIRST_MS + (nBubbles - 1) * BUBBLE_GAP_MS + BUBBLE_TAIL_MS;
+  let s = Math.max((S.frame === 1 || S.frame === 2) ? 5 : 3, Math.ceil(bubbleMs / 1000));
   S.revealCount = s;
   updateButtons();
   const startCountdown = () => {
@@ -493,8 +548,10 @@ function renderStage() {
       <h2 class="stageline">${esc(c.headline)}</h2>
       <p class="lede">${esc(c.lede)}</p>
       <ul class="checks">${c.bullets.map((b, i) => `<li style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
+      <p class="lede">${esc(c.onramp)}</p>
       <div class="issue" style="animation-delay:1.2s"><h4>Signed policy on stage</h4>${esc(c.policyLine(S.rules?.title ?? ""))}</div>
-      ${calloutHTML("opening")}`;
+      ${calloutHTML("opening")}
+      <div class="bubbles" id="bubbles"></div>`;
     return;
   }
   if (S.frame === 4) {
@@ -506,8 +563,9 @@ function renderStage() {
       <p class="lede">${esc(c.lede)}</p>
       <ul class="checks">${c.bullets.map((b, i) => `<li class="good" style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
       <div class="reqcard">${S.results.map((r, i) => r ? `<div class="req"><div class="k">Moment ${i + 1}</div><div class="v">${esc(words[i])}</div></div>` : "").join("")}</div>
-      <p class="closeline">Most small businesses become less sellable the day a key person leaves. This is the counter-example.</p>
+      <p class="closeline">Most micro and small businesses become less sellable the day a key person leaves. This is the counter-example.</p>
       ${calloutHTML("close")}
+      <div class="bubbles" id="bubbles"></div>
       <p class="lede">${esc(c.tline)}</p>
       <div class="issue" style="animation-delay:1.2s"><h4>The offer</h4>${esc(c.line)}</div>`;
     return;
@@ -524,6 +582,7 @@ function renderStage() {
     <div class="stampwrap"><div class="stamp ${stampClass(st)}">${esc(COPY.stamp[st] ?? st)}</div></div>
     <p class="verdict">${esc(c.verdict)}</p>
     ${calloutHTML("m" + S.frame)}
+    <div class="bubbles" id="bubbles"></div>
     <ul class="checks">${lines.slice(1).map((l, i) => `<li class="${/satisfied|AUTHORIZED|within|present|verified|supported/i.test(l) ? "good" : /REFUSED|ESCALATED|missing|not |exceeds|failure/i.test(l) ? "bad" : ""}" style="animation-delay:${0.9 + i * 0.3}s">${esc(l)}</li>`).join("")}</ul>
     ${r?.issue ? `<div class="issue" style="animation-delay:${0.9 + lines.length * 0.3}s"><h4>Follow-up card opened · ${esc(r.issue.id)}</h4><div><strong>${esc(r.issue.title)}</strong><br>${esc(issuePlain(r))}</div></div>` : ""}`;
 }
@@ -636,13 +695,14 @@ btnNext.onclick = () => {
   else if (S.frame <= 2) gotoFrame(S.frame + 1);
   else if (S.frame === 3) gotoFrame(4);
 };
-btnBack.onclick = () => { if (S.frame > -1) { stopAuto(); S.frame -= 1; S.revealDone = true; clearInterval(S.revealTimer); hint.textContent = COPY.presenter.ready; renderRail(); renderStage(); renderPanel(); updateButtons(); } };
+btnBack.onclick = () => { if (S.frame > -1) { stopAuto(); clearBubbles(); S.frame -= 1; S.revealDone = true; clearInterval(S.revealTimer); hint.textContent = COPY.presenter.ready; renderRail(); renderStage(); renderPanel(); updateButtons(); playBubbles(); } };
 btnRestart.onclick = () => {
-  stopAuto(); clearLedger(); resetIssueCounter();
+  stopAuto(); clearBubbles(); clearLedger(); resetIssueCounter();
   S.frame = -1; S.furthest = -1; S.results = [null, null, null, null];
   S.revealDone = true; clearInterval(S.revealTimer);
   hint.textContent = COPY.presenter.restarted;
   renderRail(); renderStage(); renderPanel(); updateButtons();
+  playBubbles();
 };
 btnAuto.onclick = () => {
   if (S.autoplay) { stopAuto(); hint.textContent = COPY.presenter.autoOff; return; }
