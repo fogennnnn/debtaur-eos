@@ -67,6 +67,13 @@
   .stamp.stop{color:var(--red);border-color:var(--red);background:var(--redbg)}
   .stamp.owner{color:var(--amber);border-color:var(--amber);background:var(--amberbg)}
   @keyframes stampin{0%{opacity:0;transform:rotate(-4deg) scale(1.8)}60%{opacity:1;transform:rotate(-4deg) scale(.94)}100%{opacity:1;transform:rotate(-4deg) scale(1)}}
+  /* exit callouts + close line */
+  .callout{background:var(--paper2);border-left:4px solid var(--brass);border-radius:0 10px 10px 0;
+    padding:12px 16px;margin:16px 0;font-size:14.5px}
+  .callout p{margin:4px 0;color:var(--ink)}
+  .callout p:last-child{color:var(--ink2)}
+  .closeline{font-family:var(--serif);font-size:clamp(19px,3vw,26px);line-height:1.4;margin:22px 0 6px;max-width:60ch}
+  .btn.quiet{opacity:.55;font-size:12.5px}
   .verdict{text-align:center;font-size:17px;max-width:60ch;margin:0 auto}
   .checks{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
   .checks li{background:var(--paper);border:1px solid var(--line);border-left:6px solid var(--brass);
@@ -117,8 +124,8 @@
   <div class="presenter">
     <button class="btn next" id="btnNext">Begin the run →</button>
     <button class="btn ghost" id="btnBack" disabled>← Back</button>
-    <button class="btn ghost" id="btnAuto">▶ Auto-play</button>
     <button class="btn ghost" id="btnRestart">Restart</button>
+    <button class="btn ghost quiet" id="btnAuto">▶ Auto-play</button>
     <span class="hint" id="presenterHint"></span>
   </div>
 
@@ -145,6 +152,7 @@ const COPY = {
   presenter: {
     start: "Press Begin. Each moment plays in order — the stop must be watched, not skipped.",
     watching: (s) => `Watching… continue unlocks in ${s}s — let the room see the stop.`,
+    holding: "Holding the stamp — let the room absorb it.",
     ready: "Ready — continue when the room has seen it.",
     back: "You can revisit what the room has already seen. You cannot jump ahead.",
     autoOn: "Auto-play on — the run advances itself. Press any step button to take over.",
@@ -258,6 +266,20 @@ const COPY = {
     needSig: "Signature required:",
     contextLabel: "Inputs on record:"
   },
+  callouts: {
+    opening: { what: "Manager leaves. The signed policy remains the only authority.",
+      why: "Why it matters: This is the moment most businesses lose control." },
+    m0: { what: "Two required signatures present. Policy allows the $7,500 payout.",
+      why: "Why it matters: Routine decisions stay fast after people leave." },
+    m1: { what: "Finance signature missing. Engine refuses. No improvisation.",
+      why: "Why it matters: This is the exact failure mode that kills transferability." },
+    m2: { what: "Amount exceeds $10,000. Only the owner override can release it.",
+      why: "Why it matters: High-value decisions stay protected even when the original manager is gone." },
+    m3: { what: "Someone tried to raise the limit. Fingerprint no longer matches. Policy refuses.",
+      why: "Why it matters: The rules cannot be quietly rewritten after the owner exits." },
+    close: { what: "The people changed. The rules stayed.",
+      why: "This is what process maturity looks like to a buyer or lender." }
+  },
   stamp: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Owner review" },
   statusWord: { AUTHORIZED: "Approved", REFUSED: "Stopped", ESCALATED: "Flagged for owner" }
 };
@@ -367,22 +389,32 @@ function gotoFrame(f) {
 function beginRevealLock() {
   S.revealDone = false;
   clearTimeout(S.revealTimer);
-  let s = 3;
+  const critical = S.frame >= 0 && S.frame <= 3 &&
+    ["REFUSED", "ESCALATED"].includes(S.results[S.frame]?.result?.status);
+  let s = (S.frame === 1 || S.frame === 2) ? 5 : 3;
   S.revealCount = s;
   updateButtons();
-  hint.textContent = COPY.presenter.watching(s);
-  S.revealTimer = setInterval(() => {
-    s -= 1;
-    if (s <= 0) {
-      clearInterval(S.revealTimer);
-      S.revealDone = true;
-      hint.textContent = S.frame === 4 ? COPY.presenter.atEnd : COPY.presenter.ready;
-      updateButtons();
-    } else {
-      hint.textContent = COPY.presenter.watching(s);
-      btnNext.textContent = nextLabel() + ` (${s})`;
-    }
-  }, 1000);
+  const startCountdown = () => {
+    hint.textContent = COPY.presenter.watching(s);
+    S.revealTimer = setInterval(() => {
+      s -= 1;
+      if (s <= 0) {
+        clearInterval(S.revealTimer);
+        S.revealDone = true;
+        hint.textContent = S.frame === 4 ? COPY.presenter.atEnd : COPY.presenter.ready;
+        updateButtons();
+      } else {
+        hint.textContent = COPY.presenter.watching(s);
+        btnNext.textContent = nextLabel() + ` (${s})`;
+      }
+    }, 1000);
+  };
+  if (critical) {
+    hint.textContent = COPY.presenter.holding;
+    S.revealTimer = setTimeout(startCountdown, 1500);
+  } else {
+    startCountdown();
+  }
 }
 
 function nextLabel() {
@@ -446,6 +478,12 @@ function reqCards(req, tamper) {
   </div>`;
 }
 
+function calloutHTML(key) {
+  const c = COPY.callouts[key];
+  if (!c) return "";
+  return `<aside class="callout"><p><strong>${esc(c.what)}</strong></p><p>${esc(c.why)}</p></aside>`;
+}
+
 function renderStage() {
   if (S.frame === -1) {
     const c = COPY.intro;
@@ -454,7 +492,8 @@ function renderStage() {
       <h2 class="stageline">${esc(c.headline)}</h2>
       <p class="lede">${esc(c.lede)}</p>
       <ul class="checks">${c.bullets.map((b, i) => `<li style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
-      <div class="issue" style="animation-delay:1.2s"><h4>Signed policy on stage</h4>${esc(c.policyLine(S.rules?.title ?? ""))}</div>`;
+      <div class="issue" style="animation-delay:1.2s"><h4>Signed policy on stage</h4>${esc(c.policyLine(S.rules?.title ?? ""))}</div>
+      ${calloutHTML("opening")}`;
     return;
   }
   if (S.frame === 4) {
@@ -466,6 +505,8 @@ function renderStage() {
       <p class="lede">${esc(c.lede)}</p>
       <ul class="checks">${c.bullets.map((b, i) => `<li class="good" style="animation-delay:${0.3 + i * 0.25}s">${esc(b)}</li>`).join("")}</ul>
       <div class="reqcard">${S.results.map((r, i) => r ? `<div class="req"><div class="k">Moment ${i + 1}</div><div class="v">${esc(words[i])}</div></div>` : "").join("")}</div>
+      <p class="closeline">Most small businesses become less sellable the day a key person leaves. This is the counter-example.</p>
+      ${calloutHTML("close")}
       <div class="issue" style="animation-delay:1.2s"><h4>The offer</h4>${esc(c.line)}</div>`;
     return;
   }
@@ -480,6 +521,7 @@ function renderStage() {
     ${reqCards(r?.step?.request, !!r?.step?.tamper)}
     <div class="stampwrap"><div class="stamp ${stampClass(st)}">${esc(COPY.stamp[st] ?? st)}</div></div>
     <p class="verdict">${esc(c.verdict)}</p>
+    ${calloutHTML("m" + S.frame)}
     <ul class="checks">${lines.slice(1).map((l, i) => `<li class="${/satisfied|AUTHORIZED|within|present|verified|supported/i.test(l) ? "good" : /REFUSED|ESCALATED|missing|not |exceeds|failure/i.test(l) ? "bad" : ""}" style="animation-delay:${0.9 + i * 0.3}s">${esc(l)}</li>`).join("")}</ul>
     ${r?.issue ? `<div class="issue" style="animation-delay:${0.9 + lines.length * 0.3}s"><h4>Follow-up card opened · ${esc(r.issue.id)}</h4><div><strong>${esc(r.issue.title)}</strong><br>${esc(issuePlain(r))}</div></div>` : ""}`;
 }
